@@ -1,6 +1,12 @@
-version: "3.9"
-
 services:
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
   phoenix-db:
     image: postgres:15
     restart: always
@@ -12,6 +18,11 @@ services:
       - phoenix-db-data:/var/lib/postgresql/data
     ports:
       - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
 
   symfony-db:
     image: postgres:15
@@ -24,14 +35,20 @@ services:
       - symfony-db-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
 
   phoenix:
-    build: 
+    build:
       context: ./phoenix-api
       dockerfile: Dockerfile
       target: dev
     depends_on:
-      - phoenix-db
+      phoenix-db:
+        condition: service_healthy
     environment:
       DATABASE_URL: ecto://postgres:postgres@phoenix-db/phoenix_api
       SECRET_KEY_BASE: ${PHOENIX_SECRET_KEY_BASE:-thisisasecret111}
@@ -48,12 +65,17 @@ services:
       dockerfile: Dockerfile
       target: dev
     depends_on:
-      - symfony-db
-      - phoenix
+      symfony-db:
+        condition: service_healthy
+      phoenix:
+        condition: service_started
+      redis:
+        condition: service_started
     environment:
       APP_ENV: dev
       APP_SECRET: ${SYMFONY_APP_SECRET:-thisisasecret222}
       PHOENIX_BASE_URL: http://phoenix:4000
+      REDIS_URL: redis://redis:6379
       DATABASE_URL: postgres://postgres:postgres@symfony-db:5432/symfony_app
     ports:
       - "8000:8000"
@@ -63,3 +85,4 @@ services:
 volumes:
   phoenix-db-data:
   symfony-db-data:
+  redis-data:

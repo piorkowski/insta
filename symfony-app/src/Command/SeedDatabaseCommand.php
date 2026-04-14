@@ -2,17 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\Command;
+namespace Command;
 
-use App\Entity\AuthToken;
-use App\Entity\Photo;
-use App\Entity\User;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use Photo\Infrastructure\Doctrine\Entity\PhotoEntity;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use User\Infrastructure\Doctrine\Entity\AuthTokenEntity;
+use User\Infrastructure\Doctrine\Entity\UserEntity;
 
 #[AsCommand(
     name: 'app:seed',
@@ -21,7 +22,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class SeedDatabaseCommand extends Command
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
     ) {
         parent::__construct();
     }
@@ -32,7 +33,7 @@ class SeedDatabaseCommand extends Command
 
         $io->title('Seeding database with sample data');
 
-        // Sample users data
+        /** @var list<array{username: string, email: string, name: string, lastName: string, age: int, bio: string}> $usersData */
         $usersData = [
             [
                 'username' => 'nature_lover',
@@ -68,9 +69,10 @@ class SeedDatabaseCommand extends Command
             ],
         ];
 
+        /** @var list<UserEntity> $users */
         $users = [];
         foreach ($usersData as $userData) {
-            $user = new User();
+            $user = new UserEntity();
             $user->setUsername($userData['username'])
                 ->setEmail($userData['email'])
                 ->setName($userData['name'])
@@ -86,12 +88,16 @@ class SeedDatabaseCommand extends Command
 
         $this->entityManager->flush();
 
-        // Create auth tokens for each user
         foreach ($users as $user) {
+            $userId = $user->getId();
+            if (null === $userId) {
+                continue;
+            }
+
             $token = bin2hex(random_bytes(32));
-            $authToken = new AuthToken();
+            $authToken = new AuthTokenEntity();
             $authToken->setToken($token)
-                ->setUser($user);
+                ->setUserId($userId);
 
             $this->entityManager->persist($authToken);
 
@@ -100,114 +106,35 @@ class SeedDatabaseCommand extends Command
 
         $this->entityManager->flush();
 
-        // Sample photos data with picsum URLs (nature/animals themed)
+        /** @var list<array{imageUrl: string, location: string, description: string, camera: string, takenAt: string, userIndex: int}> $photosData */
         $photosData = [
-            [
-                'imageUrl' => 'https://picsum.photos/seed/forest1/800/600',
-                'location' => 'Olympic National Park, Washington',
-                'description' => 'Misty morning in the ancient forest. The towering trees create a magical atmosphere.',
-                'camera' => 'Canon EOS R5',
-                'takenAt' => '2024-03-15 07:30:00',
-                'userIndex' => 0,
-            ],
-            [
-                'imageUrl' => 'https://picsum.photos/seed/mountain1/800/600',
-                'location' => 'Swiss Alps',
-                'description' => 'Breathtaking view of snow-capped peaks at sunrise.',
-                'camera' => 'Sony A7R IV',
-                'takenAt' => '2024-01-22 06:15:00',
-                'userIndex' => 2,
-            ],
-            [
-                'imageUrl' => 'https://picsum.photos/seed/deer1/800/600',
-                'location' => 'Yellowstone National Park',
-                'description' => 'A majestic deer in its natural habitat, grazing peacefully.',
-                'camera' => 'Nikon D850',
-                'takenAt' => '2024-05-10 17:45:00',
-                'userIndex' => 1,
-            ],
-            [
-                'imageUrl' => 'https://picsum.photos/seed/ocean1/800/600',
-                'location' => 'Big Sur, California',
-                'description' => 'Where the ocean meets the rugged coastline. Nature at its finest.',
-                'camera' => 'Fujifilm X-T4',
-                'takenAt' => '2024-04-08 18:20:00',
-                'userIndex' => 2,
-            ],
-            [
-                'imageUrl' => 'https://picsum.photos/seed/bird1/800/600',
-                'location' => 'Amazon Rainforest, Brazil',
-                'description' => 'Vibrant tropical bird perched on a branch, showcasing nature\'s colors.',
-                'camera' => 'Canon EOS R6',
-                'takenAt' => '2024-02-14 09:30:00',
-                'userIndex' => 3,
-            ],
-            [
-                'imageUrl' => 'https://picsum.photos/seed/lake1/800/600',
-                'location' => 'Lake Louise, Canada',
-                'description' => 'Crystal clear mountain lake reflecting the surrounding peaks.',
-                'camera' => 'Sony A7 III',
-                'takenAt' => '2024-06-25 11:00:00',
-                'userIndex' => 0,
-            ],
-            [
-                'imageUrl' => 'https://picsum.photos/seed/fox1/800/600',
-                'location' => 'Scottish Highlands',
-                'description' => 'A curious fox exploring the moorlands at dawn.',
-                'camera' => 'Nikon Z7 II',
-                'takenAt' => '2024-07-03 05:45:00',
-                'userIndex' => 3,
-            ],
-            [
-                'imageUrl' => 'https://picsum.photos/seed/waterfall1/800/600',
-                'location' => 'Iceland',
-                'description' => 'Powerful waterfall cascading down volcanic rocks.',
-                'camera' => 'Canon EOS 5D Mark IV',
-                'takenAt' => '2024-08-19 14:30:00',
-                'userIndex' => 2,
-            ],
-            [
-                'imageUrl' => 'https://picsum.photos/seed/bear1/800/600',
-                'location' => 'Alaska',
-                'description' => 'Brown bear fishing for salmon in a pristine river.',
-                'camera' => 'Nikon D6',
-                'takenAt' => '2024-09-05 16:00:00',
-                'userIndex' => 1,
-            ],
-            [
-                'imageUrl' => 'https://picsum.photos/seed/sunset1/800/600',
-                'location' => 'Serengeti, Tanzania',
-                'description' => 'Golden hour on the African savanna. Nature\'s perfect lighting.',
-                'camera' => 'Sony A1',
-                'takenAt' => '2024-10-12 19:15:00',
-                'userIndex' => 0,
-            ],
-            [
-                'imageUrl' => 'https://picsum.photos/seed/wolf1/800/600',
-                'location' => 'Canadian Rockies',
-                'description' => 'A lone wolf surveying its territory from a rocky outcrop.',
-                'camera' => 'Canon EOS-1D X Mark III',
-                'takenAt' => '2024-11-20 08:30:00',
-                'userIndex' => 1,
-            ],
-            [
-                'imageUrl' => 'https://picsum.photos/seed/meadow1/800/600',
-                'location' => 'Alps, Austria',
-                'description' => 'Wildflower meadow in full bloom during spring.',
-                'camera' => 'Fujifilm GFX 100',
-                'takenAt' => '2024-05-18 13:20:00',
-                'userIndex' => 2,
-            ],
+            ['imageUrl' => 'https://picsum.photos/seed/forest1/800/600', 'location' => 'Olympic National Park, Washington', 'description' => 'Misty morning in the ancient forest. The towering trees create a magical atmosphere.', 'camera' => 'Canon EOS R5', 'takenAt' => '2024-03-15 07:30:00', 'userIndex' => 0],
+            ['imageUrl' => 'https://picsum.photos/seed/mountain1/800/600', 'location' => 'Swiss Alps', 'description' => 'Breathtaking view of snow-capped peaks at sunrise.', 'camera' => 'Sony A7R IV', 'takenAt' => '2024-01-22 06:15:00', 'userIndex' => 2],
+            ['imageUrl' => 'https://picsum.photos/seed/deer1/800/600', 'location' => 'Yellowstone National Park', 'description' => 'A majestic deer in its natural habitat, grazing peacefully.', 'camera' => 'Nikon D850', 'takenAt' => '2024-05-10 17:45:00', 'userIndex' => 1],
+            ['imageUrl' => 'https://picsum.photos/seed/ocean1/800/600', 'location' => 'Big Sur, California', 'description' => 'Where the ocean meets the rugged coastline. Nature at its finest.', 'camera' => 'Fujifilm X-T4', 'takenAt' => '2024-04-08 18:20:00', 'userIndex' => 2],
+            ['imageUrl' => 'https://picsum.photos/seed/bird1/800/600', 'location' => 'Amazon Rainforest, Brazil', 'description' => 'Vibrant tropical bird perched on a branch, showcasing nature\'s colors.', 'camera' => 'Canon EOS R6', 'takenAt' => '2024-02-14 09:30:00', 'userIndex' => 3],
+            ['imageUrl' => 'https://picsum.photos/seed/lake1/800/600', 'location' => 'Lake Louise, Canada', 'description' => 'Crystal clear mountain lake reflecting the surrounding peaks.', 'camera' => 'Sony A7 III', 'takenAt' => '2024-06-25 11:00:00', 'userIndex' => 0],
+            ['imageUrl' => 'https://picsum.photos/seed/fox1/800/600', 'location' => 'Scottish Highlands', 'description' => 'A curious fox exploring the moorlands at dawn.', 'camera' => 'Nikon Z7 II', 'takenAt' => '2024-07-03 05:45:00', 'userIndex' => 3],
+            ['imageUrl' => 'https://picsum.photos/seed/waterfall1/800/600', 'location' => 'Iceland', 'description' => 'Powerful waterfall cascading down volcanic rocks.', 'camera' => 'Canon EOS 5D Mark IV', 'takenAt' => '2024-08-19 14:30:00', 'userIndex' => 2],
+            ['imageUrl' => 'https://picsum.photos/seed/bear1/800/600', 'location' => 'Alaska', 'description' => 'Brown bear fishing for salmon in a pristine river.', 'camera' => 'Nikon D6', 'takenAt' => '2024-09-05 16:00:00', 'userIndex' => 1],
+            ['imageUrl' => 'https://picsum.photos/seed/sunset1/800/600', 'location' => 'Serengeti, Tanzania', 'description' => 'Golden hour on the African savanna. Nature\'s perfect lighting.', 'camera' => 'Sony A1', 'takenAt' => '2024-10-12 19:15:00', 'userIndex' => 0],
+            ['imageUrl' => 'https://picsum.photos/seed/wolf1/800/600', 'location' => 'Canadian Rockies', 'description' => 'A lone wolf surveying its territory from a rocky outcrop.', 'camera' => 'Canon EOS-1D X Mark III', 'takenAt' => '2024-11-20 08:30:00', 'userIndex' => 1],
+            ['imageUrl' => 'https://picsum.photos/seed/meadow1/800/600', 'location' => 'Alps, Austria', 'description' => 'Wildflower meadow in full bloom during spring.', 'camera' => 'Fujifilm GFX 100', 'takenAt' => '2024-05-18 13:20:00', 'userIndex' => 2],
         ];
 
         foreach ($photosData as $photoData) {
-            $photo = new Photo();
+            $photoUserId = $users[$photoData['userIndex']]->getId();
+            if (null === $photoUserId) {
+                continue;
+            }
+
+            $photo = new PhotoEntity();
             $photo->setImageUrl($photoData['imageUrl'])
                 ->setLocation($photoData['location'])
                 ->setDescription($photoData['description'])
                 ->setCamera($photoData['camera'])
-                ->setTakenAt(new \DateTimeImmutable($photoData['takenAt']))
-                ->setUser($users[$photoData['userIndex']]);
+                ->setTakenAt(new DateTimeImmutable($photoData['takenAt']))
+                ->setUserId($photoUserId);
 
             $this->entityManager->persist($photo);
 
@@ -217,7 +144,7 @@ class SeedDatabaseCommand extends Command
         $this->entityManager->flush();
 
         $io->success('Database seeded successfully!');
-        $io->info(sprintf('Created %d users, %d auth tokens, and %d photos', count($usersData), count($usersData), count($photosData)));
+        $io->info(\sprintf('Created %d users, %d auth tokens, and %d photos', \count($usersData), \count($usersData), \count($photosData)));
 
         return Command::SUCCESS;
     }

@@ -8,10 +8,19 @@
         <env name="KERNEL_CLASS" value="App\Kernel"/>
         <env name="APP_ENV" value="test"/>
         <env name="APP_DEBUG" value="1"/>
+        <env name="DATABASE_URL" value="pgsql://postgres:postgres@symfony-db:5432/symfony_app_test"/>
+        <env name="PHOENIX_BASE_URL" value="http://phoenix:4000"/>
+        <env name="REDIS_URL" value="redis://redis:6379"/>
     </php>
     <testsuites>
-        <testsuite name="App Test Suite">
-            <directory>tests</directory>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+        <testsuite name="Functional">
+            <directory>tests/Functional</directory>
         </testsuite>
     </testsuites>
 </phpunit>

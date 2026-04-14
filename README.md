@@ -5,81 +5,51 @@ Ten projekt składa się z dwóch oddzielnych aplikacji z własnymi bazami danyc
 - **Symfony App** (port 8000): Główna aplikacja internetowa
   - Baza danych: `symfony-db` (PostgreSQL, port 5432)
   - Nazwa bazy danych: `symfony_app`
+  - Redis (cache, port 6379)
 
 - **Phoenix API** (port 4000): Mikroserwis REST API
   - Baza danych: `phoenix-db` (PostgreSQL, port 5433)
   - Nazwa bazy danych: `phoenix_api`
 
 ## Szybki start
+
 ```bash
-docker-compose up -d
-
-# Konfiguracja bazy danych Symfony
-docker-compose exec symfony php bin/console doctrine:migrations:migrate --no-interaction
-docker-compose exec symfony php bin/console app:seed
-
-# Konfiguracja bazy danych Phoenix
-docker-compose exec phoenix mix ecto.migrate
-docker-compose exec phoenix mix run priv/repo/seeds.exs
+make start
 ```
 
-Dostęp do aplikacji:
-- Symfony App: http://localhost:8000
-- Phoenix API: http://localhost:4000
+Aplikacja będzie dostępna pod:
+- Symfony App: http://127.0.0.1:8000
+- Phoenix API: http://127.0.0.1:4000
 
-## Komendy Symfony
+### Inne komendy
 
-### Migracja bazy danych
 ```bash
-docker-compose exec symfony php bin/console doctrine:migrations:migrate --no-interaction
+make stop    # Zatrzymanie kontenerów
+make reset   # Pełny reset (usunięcie danych + ponowne postawienie)
 ```
 
-### Ponowne tworzenie bazy danych
+## Uruchamianie testów
+
+### Symfony (PHP)
 ```bash
-docker-compose exec symfony php bin/console doctrine:schema:drop --force --full-database
-docker-compose exec symfony php bin/console doctrine:migrations:migrate --no-interaction
-docker-compose exec symfony php bin/console app:seed
+docker compose exec symfony php bin/phpunit
 ```
 
-### Czyszczenie pamięci podręcznej (Cache)
+### PHPStan
 ```bash
-docker-compose exec symfony php bin/console cache:clear
+docker compose exec symfony vendor/bin/phpstan analyse --memory-limit=512M
 ```
 
-### Restart
+### CS-Fixer
 ```bash
-docker-compose restart symfony
+docker compose exec symfony vendor/bin/php-cs-fixer fix --dry-run --diff
 ```
 
-### Uruchamianie testów
+### Phoenix (Elixir)
 ```bash
-docker-compose exec symfony php bin/phpunit
+docker compose exec phoenix mix test
 ```
 
-## Komendy Phoenix
+## Dokumentacja
 
-### Migracja bazy danych
-```bash
-docker-compose exec phoenix mix ecto.migrate
-```
-
-### Seedowanie bazy danych
-```bash
-docker-compose exec phoenix mix run priv/repo/seeds.exs
-```
-
-### Ponowne tworzenie bazy danych
-```bash
-docker-compose exec phoenix mix ecto.reset
-docker-compose exec phoenix mix run priv/repo/seeds.exs
-```
-
-### Restart
-```bash
-docker-compose restart phoenix
-```
-
-### Uruchamianie testów
-```bash
-docker-compose exec phoenix mix test
-```
+Szczegółowy opis decyzji architektonicznych, wprowadzonych zmian i napotkanych problemów znajduje się w [docs/NOTES.md](docs/NOTES.md).

@@ -8,16 +8,16 @@ doctrine:
         naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
         auto_mapping: true
         mappings:
-            App:
+            PhotoInfrastructure:
                 is_bundle: false
-                dir: '%kernel.project_dir%/src/Entity'
-                prefix: 'App\Entity'
-                alias: App
-            Likes:
+                dir: '%kernel.project_dir%/src/Photo/Infrastructure/Doctrine/Entity'
+                prefix: 'Photo\Infrastructure\Doctrine\Entity'
+                alias: PhotoInfrastructure
+            UserInfrastructure:
                 is_bundle: false
-                dir: '%kernel.project_dir%/src/Likes'
-                prefix: 'App\Likes'
-                alias: Likes
+                dir: '%kernel.project_dir%/src/User/Infrastructure/Doctrine/Entity'
+                prefix: 'User\Infrastructure\Doctrine\Entity'
+                alias: UserInfrastructure
 
 when@test:
     doctrine:

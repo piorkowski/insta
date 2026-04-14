@@ -1,6 +1,14 @@
-# Define your routes here
-controllers:
+photo_actions:
     resource:
-        path: ../src/Controller/
-        namespace: App\Controller
+        path: ../src/Photo/UI/Action/
+        namespace: Photo\UI\Action
     type: attribute
+
+user_actions:
+    resource:
+        path: ../src/User/UI/Action/
+        namespace: User\UI\Action
+    type: attribute
+
+logout:
+    path: /logout

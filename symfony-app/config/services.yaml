@@ -3,7 +3,64 @@ services:
         autowire: true
         autoconfigure: true
 
-    App\:
-        resource: '../src/'
-        exclude:
-            - '../src/Kernel.php'
+    Photo\:
+        resource: '../src/Photo/'
+
+    User\:
+        resource: '../src/User/'
+
+    Shared\:
+        resource: '../src/Shared/'
+
+    Command\:
+        resource: '../src/Command/'
+
+    # Bus interface bindings
+    Shared\Application\Bus\CommandBusInterface:
+        alias: Shared\Infrastructure\Bus\MessengerCommandBus
+
+    Shared\Application\Bus\QueryBusInterface:
+        alias: Shared\Infrastructure\Bus\MessengerQueryBus
+
+    Shared\Infrastructure\Bus\MessengerCommandBus:
+        arguments:
+            $commandBus: '@command.bus'
+
+    Shared\Infrastructure\Bus\MessengerQueryBus:
+        arguments:
+            $queryBus: '@query.bus'
+
+    # Domain repository interface bindings
+    Photo\Domain\Repository\PhotoReadRepositoryInterface:
+        alias: Photo\Infrastructure\Doctrine\Repository\DoctrinePhotoReadRepository
+
+    Photo\Domain\Repository\PhotoWriteRepositoryInterface:
+        alias: Photo\Infrastructure\Doctrine\Repository\DoctrinePhotoWriteRepository
+
+    User\Domain\Repository\UserReadRepositoryInterface:
+        alias: User\Infrastructure\Doctrine\Repository\DoctrineUserReadRepository
+
+    User\Domain\Repository\UserWriteRepositoryInterface:
+        alias: User\Infrastructure\Doctrine\Repository\DoctrineUserWriteRepository
+
+    # Application port bindings
+    Photo\Application\Port\PhotoImportClientInterface:
+        alias: Photo\Infrastructure\Integrations\PhoenixApi\HttpPhoenixApiClient
+
+    # Phoenix API client configuration
+    Photo\Infrastructure\Integrations\PhoenixApi\HttpPhoenixApiClient:
+        arguments:
+            $phoenixBaseUrl: '%env(PHOENIX_BASE_URL)%'
+
+    # Event dispatcher
+    Shared\Application\EventDispatcherInterface:
+        alias: Shared\Infrastructure\Messenger\DomainEventDispatcher
+
+    Shared\Infrastructure\Messenger\DomainEventDispatcher:
+        arguments:
+            $eventBus: '@event.bus'
+
+    # ImportPhotosHandler event bus binding
+    Photo\Application\UseCase\ImportPhotos\ImportPhotosHandler:
+        arguments:
+            $eventBus: '@event.bus'

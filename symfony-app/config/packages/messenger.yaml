@@ -1,0 +1,22 @@
+framework:
+    messenger:
+        default_bus: command.bus
+
+        buses:
+            command.bus:
+                middleware:
+                    - doctrine_transaction
+            query.bus: ~
+            event.bus:
+                default_middleware:
+                    enabled: true
+                    allow_no_handlers: true
+
+        transports:
+            async:
+                dsn: 'doctrine://default'
+
+        routing:
+            Photo\Domain\Event\PhotoLiked: async
+            Photo\Domain\Event\PhotoUnliked: async
+            Photo\Domain\Event\PhotosImported: async
